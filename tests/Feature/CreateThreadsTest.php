@@ -11,33 +11,35 @@ class CreateThreadsTest extends TestCase
     use DatabaseMigrations;
 
     /** @test */
-    public function guest_may_not_crrate_threads()
+    public function guest_may_not_create_threads()
     {
-        $this->expectException('Illuminate\Auth\AuthenticationException');
+        $this->withExceptionHandling();
 
-        $thread = make('App\Thread');
+        $this->get('/threads/create')
+            ->assertRedirect('/login');
 
-        $this->post('/threads', $thread->toArray());
+        $this->post('/threads')
+            ->assertRedirect('/login');
+    }
+
+    /** @test */
+    public function guest_cannot_see_the_crate_thread_page()
+    {
+        $this->withExceptionHandling()->get('threads/create')
+            ->assertRedirect('/login');
     }
 
     /** @test */
     public function an_authenticated_user_can_create_new_forum_threads()
     {
-        $this->actingAs(create('App\User'));
+        $this->singIn();
 
-        $thread = make('App\Thread');
+        $thread = create('App\Thread');
 
         $this->post('/threads', $thread->toArray());
 
         $this->get($thread->path())
             ->assertSee($thread->title)
             ->assertSee($thread->body);
-    }
-
-    /** @test */
-    public function guest_cannnot_see_the_crate_thread_page()
-    {
-        $this->withExceptionHandling()->get('threads/create')
-            ->assertRedirect('/login');
     }
 }
